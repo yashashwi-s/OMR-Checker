@@ -315,6 +315,93 @@ def save_csv(csv_path,record):
 
 # ── Key loader ─────────────────────────────────────────────────────────────────
 
+def process_image_array(raw_img, all_keys):
+    """Processes a raw OpenCV image array and returns a dictionary of extracted data."""
+    try:
+        gray, dil = preprocess(raw_img)
+        cnt = find_sheet(raw_img, dil)
+        if cnt is None:
+            return {"error": "Sheet not found"}
+
+        wc, wg = warp(raw_img, gray, cnt)
+
+        if not BATCH:
+            for key, (x0f, y0f, x1f, y1f) in REGIONS.items():
+                if key.startswith("answers_col"): continue
+                key_r = key.replace("_", " ").upper()
+                H, W = wg.shape
+                flash_region(wc, int(x0f*W), int(y0f*H), int(x1f*W), int(y1f*H), key_r)
+            scan(wc, "Reading header", steps=30)
+
+        roll, _ = read_digit_grid(crop(wg, "roll"), ROLL_COLS)
+        dob_raw, _ = read_digit_grid(crop(wg, "dob"), DOB_COLS)
+        dob = f"{dob_raw[0:2]}/{dob_raw[2:4]}/{dob_raw[4:8]}" if len(dob_raw) == 8 else dob_raw
+        paper, _ = read_option_row(crop(wg, "paper"), PAPER_LABELS)
+        cat, _ = read_option_row(crop(wg, "category"), CATEGORY_LABELS)
+        subcat, _ = read_option_row(crop(wg, "sub_category"), SUBCAT_LABELS)
+        gender, _ = read_option_row(crop(wg, "gender"), GENDER_LABELS)
+
+        all_ans = read_answers(wg)
+        ans_str = "".join(LETTERS[a] if a != -1 else "-" for a, _ in all_ans)
+
+        # Grade if key exists
+        score = ""
+        key_status = f"NO KEY for paper={paper}"
+        if paper in all_keys:
+            key = all_keys[paper]
+            score_val = sum(1 for (a, _), k in zip(all_ans, key) if a != -1 and LETTERS[a] == k)
+            score = f"{score_val}/{len(key)}"
+            key_status = f"key={paper}.txt"
+
+        if not BATCH:
+            overlay_header(wc, wg, {"roll": roll, "dob": dob, "paper": paper, "category": cat, "sub_category": subcat, "gender": gender})
+            print(f"  Roll:{roll}  DOB:{dob}  Paper:{paper}  Cat:{cat}  SubCat:{subcat}  Gender:{gender}  ({key_status})")
+            print(f"  Answers: {ans_str}")
+            if score:
+                print(f"  Score: {score}")
+
+        return {
+            "roll": roll,
+            "dob": dob,
+            "paper": paper,
+            "category": cat,
+            "subcat": subcat,
+            "gender": gender,
+            "answers": ans_str,
+            "score": score
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+def process_image(img_path, all_keys, csv_path):
+    raw_img = cv2.imread(img_path)
+    if raw_img is None:
+        print(f"[ERROR] Could not read {img_path}")
+        return
+
+    # Resize to max 1500px on the longest side to speed up and normalize processing
+    h, w = raw_img.shape[:2]
+    if max(h, w) > 1500:
+        s = 1500 / max(h, w)
+        raw_img = cv2.resize(raw_img, (int(w * s), int(h * s)))
+
+    results = process_image_array(raw_img, all_keys)
+    if "error" in results:
+        print(f"[ERROR] {results['error']} in {img_path}")
+        return
+
+    # Append to CSV
+    record = {
+        "image": os.path.basename(img_path),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "roll_no": results["roll"], "dob": results["dob"], "gender": results["gender"],
+        "paper_set": results["paper"], "category": results["category"], "sub_category": results["subcat"],
+        "score": results["score"],
+        "answers": results["answers"]
+    }
+    save_csv(csv_path, record)
+    print(f"  → saved to {csv_path}")
+
 def load_key(path):
     """Load an answer key file. Returns list of int indices (0=A,1=B,...) or None."""
     if not path or not os.path.exists(path):
@@ -334,73 +421,6 @@ def load_all_keys():
             print(f"  Key missing: {filename}  (sheets with paper={code} won't be graded)")
     return keys
 
-
-# ── Per-image pipeline ────────────────────────────────────────────────────────
-
-def process_image(img_path, all_keys, csv_path, idx=1, total=1):
-    """Process one OMR image. Detects paper code, picks correct key, grades."""
-    img=cv2.imread(img_path)
-    if img is None:
-        print(f"  [SKIP] Cannot read: {img_path}"); return
-
-    h,w=img.shape[:2]
-    if max(h,w)>1500:
-        s=1500/max(h,w); img=cv2.resize(img,(int(w*s),int(h*s)))
-
-    if BATCH:
-        show_batch_progress(img, os.path.basename(img_path), idx, total)
-    else:
-        show(img,"0  Original",800)
-        scan(img,"Preprocessing")
-
-    gray,dil=preprocess(img)
-    cnt=find_sheet(img,dil)
-    wc,wg=warp(img,gray,cnt)
-    H,W=wg.shape
-
-    if not BATCH:
-        for key_r,(x0,y0,x1,y1) in REGIONS.items():
-            flash_region(wc,int(x0*W),int(y0*H),int(x1*W),int(y1*H),key_r)
-        scan(wc,"Reading header",steps=30)
-
-    roll,_    = read_digit_grid(crop(wg,"roll"),  ROLL_COLS)
-    dob_raw,_ = read_digit_grid(crop(wg,"dob"), DOB_COLS)
-    dob       = f"{dob_raw[0:2]}/{dob_raw[2:4]}/{dob_raw[4:8]}" if len(dob_raw)==8 else dob_raw
-    paper,_   = read_option_row(crop(wg,"paper"),    PAPER_LABELS)
-    cat,_     = read_option_row(crop(wg,"category"), CATEGORY_LABELS)
-    subcat,_  = read_option_row(crop(wg,"sub_category"), SUBCAT_LABELS)
-    gender,_  = read_option_row(crop(wg,"gender"),   GENDER_LABELS)
-
-    # Pick the right answer key based on detected paper code
-    key = all_keys.get(paper)
-    key_status = f"key={paper}.txt" if key else f"NO KEY for paper={paper}"
-
-    print(f"  Roll:{roll}  DOB:{dob}  Paper:{paper}  Cat:{cat}  SubCat:{subcat}  Gender:{gender}  ({key_status})")
-
-    if not BATCH:
-        overlay_header(wc,wg,{"roll":roll,"dob":dob,"paper":paper,"category":cat,"sub_category":subcat,"gender":gender})
-
-    all_ans = read_answers(wg)
-    ans_str="".join(LETTERS[a] if a != -1 else "-" for a,_ in all_ans)
-    print(f"  Answers: {ans_str}")
-
-    score=overlay_answers(wc,wg,all_ans,key)
-
-    record={
-        "image":     os.path.basename(img_path),
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "roll_no":   roll, "dob": dob, "gender": gender,
-        "paper_set": paper,"category": cat, "sub_category": subcat,
-        "score":     score if key else "",
-        "total":     len(key) if key else 50,
-    }
-    for i,(ans,conf) in enumerate(all_ans):
-        record[f"Q{i+1}"]=LETTERS[ans] if ans != -1 else ""; record[f"Q{i+1}_conf"]=conf
-        if key and i<len(key):
-            record[f"Q{i+1}_ok"]="Y" if ans==key[i] else "N"
-
-    save_csv(csv_path,record)
-    print(f"  → saved to {csv_path}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
