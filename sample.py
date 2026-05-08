@@ -6,7 +6,15 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
 def draw_bubble(c, x, y, radius=5, filled=False):
-    c.circle(x, y, radius, stroke=1, fill=1 if filled else 0)
+    c.circle(x, y, radius, stroke=1, fill=0)
+    if filled:
+        offset_x = random.uniform(-0.5, 0.5)
+        offset_y = random.uniform(-0.5, 0.5)
+        fill_radius = radius * random.uniform(0.9, 1.1)
+        gray_level = random.uniform(0.0, 0.25)
+        c.setFillColorRGB(gray_level, gray_level, gray_level)
+        c.circle(x + offset_x, y + offset_y, fill_radius, stroke=0, fill=1)
+        c.setFillColorRGB(0, 0, 0)
 
 def draw_box(c, x, y, width, height, text=""):
     c.rect(x, y, width, height, stroke=1, fill=0)
@@ -60,6 +68,7 @@ def generate_filled_omr(filepath, data):
     c.drawString(380, 730, "2. Darken the bubble completely.")
     c.drawString(380, 715, "3. Do not make any stray marks on the sheet.")
     c.drawString(380, 700, "4. Correct way: \u25CF  Incorrect way: \u2714 \u2716")
+    c.drawString(380, 685, "5. Bubble only once per question.")
     
     c.setFont("Helvetica-Bold", 10)
     c.drawString(50, 650, "Application Number")
@@ -141,7 +150,7 @@ def generate_filled_omr(filepath, data):
 
 def create_dataset(num_samples=5):
     # Create the sample directory if it doesn't exist
-    output_dir = "./sample"
+    output_dir = "./sheets"
     os.makedirs(output_dir, exist_ok=True)
     
     dataset_truth = {}

@@ -4,16 +4,25 @@ SCALE = 200 / 72.0
 PAGE_HEIGHT_PT = 841.89
 PAGE_WIDTH_PT = 595.27
 
+BORDER_X = 20
+BORDER_Y = 20
+BORDER_W = 555
+BORDER_H = 800
+
 def pt_to_px(x, y):
-    return [int(round(x * SCALE)), int(round((PAGE_HEIGHT_PT - y) * SCALE))]
+    # Map the center point (x, y) to the top-left corner (x - 5, y + 5)
+    # The radius of the bubble is 5 points.
+    top_left_x = x - 5
+    top_left_y = y + 5
+    return [int(round((top_left_x - BORDER_X) * SCALE)), int(round((BORDER_H - (top_left_y - BORDER_Y)) * SCALE))]
 
 def dist_to_px(d):
     return int(round(d * SCALE))
 
 template = {
     "pageDimensions": [
-        int(round(PAGE_WIDTH_PT * SCALE)),
-        int(round(PAGE_HEIGHT_PT * SCALE))
+        int(round(BORDER_W * SCALE)),
+        int(round(BORDER_H * SCALE))
     ],
     "bubbleDimensions": [
         dist_to_px(10), # diameter is 10 pt
@@ -21,7 +30,14 @@ template = {
     ],
     "customLabels": {},
     "fieldBlocks": {},
-    "preProcessors": []
+    "preProcessors": [
+        {
+            "name": "CropPage",
+            "options": {
+                "morphKernel": [2, 2]
+            }
+        }
+    ]
 }
 
 # --- Application Number ---

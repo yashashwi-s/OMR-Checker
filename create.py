@@ -32,6 +32,7 @@ def generate_omr(filename):
     c.drawString(380, 730, "2. Darken the bubble completely.")
     c.drawString(380, 715, "3. Do not make any stray marks on the sheet.")
     c.drawString(380, 700, "4. Correct way: \u25CF  Incorrect way: \u2714 \u2716")
+    c.drawString(380, 685, "5. Bubble only once per question.")
     
     # --- Application Number ---
     c.setFont("Helvetica-Bold", 10)
