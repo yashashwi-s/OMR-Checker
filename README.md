@@ -2,6 +2,13 @@
 
 A simple, highly accurate, plug-and-play OMR grading pipeline.
 
+## Installation
+
+Clone the repository and install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
 ## Getting Started
 
 1. **Print the Template**: 
