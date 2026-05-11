@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Example: const API_BASE_URL = 'https://my-omr-backend.onrender.com';
         const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? '' 
-            : ''; // <-- Insert Render URL here!
+            : 'https://omr-checker-7rom.onrender.com'; // <-- Insert Render URL here!
 
         try {
             const response = await fetch(`${API_BASE_URL}/process`, {
