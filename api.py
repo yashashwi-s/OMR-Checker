@@ -30,6 +30,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def root():
     return FileResponse("static/index.html")
 
+@app.get("/ping")
+async def ping():
+    """Lightweight endpoint for cronjobs to keep the server alive."""
+    return {"status": "alive"}
+
 @app.post("/process")
 async def process_files(
     answer_file: Optional[UploadFile] = File(None),
