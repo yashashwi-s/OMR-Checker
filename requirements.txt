@@ -5,7 +5,7 @@ pandas
 openpyxl
 
 # OMRChecker Requirements
-opencv-python
+opencv-python-headless
 deepmerge>=1.1.0
 dotmap>=1.3.30
 jsonschema>=4.17.3
@@ -13,3 +13,9 @@ matplotlib>=3.7.1
 numpy>=1.25.0
 rich>=13.4.2
 screeninfo>=0.8.1
+
+# API Requirements
+fastapi
+uvicorn
+python-multipart
+python-dotenv

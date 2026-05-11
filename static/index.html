@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMR Processing System</title>
+    <meta name="description" content="High-precision Optical Mark Recognition and evaluation tool.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-mesh">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <main class="container glass-panel">
+        <header>
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6H4V18H20V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 10V10.01M12 10V10.01M16 10V10.01M8 14V14.01M12 14V14.01M16 14V14.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1>OMR Evaluator</h1>
+            </div>
+            <p class="subtitle">Intelligent optical mark recognition and grading platform.</p>
+        </header>
+
+        <section class="upload-section">
+            <form id="upload-form" class="upload-form">
+                
+                <div class="form-group">
+                    <label for="answer_file">1. Answer Key</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="answer_file" name="answer_file" accept=".txt">
+                        <div class="file-drop-area" id="answer-drop-area">
+                            <span class="icon">📝</span>
+                            <span class="file-message">Upload answer.txt (leave empty to use existing)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>2. OMR Sheets</label>
+                    <div class="file-drop-area" id="sheet-drop-area" style="cursor: default;">
+                        <span class="icon">📄</span>
+                        <span class="file-message" id="sheet-message" style="margin-bottom: 1.5rem;">Drop PDF/PNG sheets here or choose below</span>
+                        
+                        <div style="display: flex; gap: 15px; justify-content: center; z-index: 20;">
+                            <label class="secondary-btn" style="cursor: pointer; position: relative;">
+                                <input type="file" id="sheet_files" name="sheet_files" accept="image/*,.pdf" multiple style="position: absolute; width: 0; height: 0; opacity: 0;">
+                                Select Files
+                            </label>
+                            
+                            <label class="secondary-btn" style="cursor: pointer; position: relative;">
+                                <input type="file" id="sheet_folder" webkitdirectory directory multiple style="position: absolute; width: 0; height: 0; opacity: 0;">
+                                Select Folder
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="primary-btn">
+                    <span class="btn-text">Process Sheets</span>
+                    <div class="loader hidden"></div>
+                </button>
+            </form>
+        </section>
+
+        <section id="results-section" class="results-section hidden">
+            <div class="results-header">
+                <h2>Evaluation Results</h2>
+                <div class="actions">
+                    <button id="download-csv" class="secondary-btn">Download CSV</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="results-table">
+                    <thead>
+                        <tr id="table-head-row">
+                            <!-- Populated dynamically -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <div id="error-container" class="error-container hidden">
+            <div class="error-icon">⚠️</div>
+            <p id="error-message"></p>
+        </div>
+    </main>
+    <script src="/static/script.js"></script>
+</body>
+</html>
